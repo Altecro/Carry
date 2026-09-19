@@ -8,10 +8,12 @@ export type Leg = {
   price: number;
   skipPrice?: boolean;
   costPct: number;
-  /** Funding payment interval in hours, when known. */
+  /** Intervalle de paiement du funding, en heures, s’il est connu. */
   fundingHours?: number;
-  /** Carbon: aprLong/aprShort are that side's PnL (positive = that side is paid). */
+  /** Carbon : aprLong / aprShort sont le PnL de chaque côté (positif = ce côté est payé). */
   pnlBySide?: boolean;
+  /** Carbon : `oi` est un plafond de notionnel, pas un open interest. */
+  oiIsCap?: boolean;
 };
 
 export type Opportunity = {

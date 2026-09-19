@@ -106,12 +106,10 @@ export function Desk() {
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 border-b border-border bg-bg/90 px-4 py-3 backdrop-blur-sm lg:hidden">
+          <header className="sticky top-0 z-30 border-b border-border bg-bg/90 px-3 py-2.5 backdrop-blur-sm lg:hidden">
             <div className="flex items-center gap-2">
-              <div className="min-w-0">
-                <Brand compact />
-              </div>
-              <div className="ml-auto flex items-center gap-2">
+              <Brand compact />
+              <div className="ml-auto flex shrink-0 items-center gap-1">
                 <LanguageSwitch compact />
                 <GuideLink compact />
                 <Sheet>
@@ -135,7 +133,12 @@ export function Desk() {
                     </div>
                   </SheetContent>
                 </Sheet>
-                <RefreshButton loading={loading} elapsed={elapsed} onRefresh={onRefresh} />
+                <RefreshButton
+                  compact
+                  loading={loading}
+                  elapsed={elapsed}
+                  onRefresh={onRefresh}
+                />
               </div>
             </div>
           </header>
@@ -249,16 +252,29 @@ function RefreshButton({
   loading,
   elapsed,
   onRefresh,
+  compact = false,
 }: {
   loading: boolean;
   elapsed: number;
   onRefresh: () => void;
+  compact?: boolean;
 }) {
   const { t } = useT();
+  const label = loading
+    ? elapsed
+      ? `${(elapsed / 1000).toFixed(0)} s`
+      : t("scanning")
+    : t("refresh");
   return (
-    <Button onClick={onRefresh} disabled={loading} className="min-w-32 lg:w-full">
+    <Button
+      onClick={onRefresh}
+      disabled={loading}
+      size={compact ? "icon" : "default"}
+      className={compact ? "shrink-0" : "min-w-32 lg:w-full"}
+      aria-label={t("refresh")}
+    >
       <RefreshCw className={cn("size-4", loading && "animate-spin")} />
-      {loading ? (elapsed ? `${(elapsed / 1000).toFixed(0)} s` : t("scanning")) : t("refresh")}
+      {compact ? <span className="sr-only">{label}</span> : label}
     </Button>
   );
 }

@@ -23,17 +23,43 @@ const HYPERLIQUID_URL = "https://api.hyperliquid.xyz/info";
 const CARBON_BASE = "https://gw.carbon.inc/v1";
 const CARBON_CHAIN_ID = 42161;
 const CARBON_DEFAULT_FUNDING_HOURS = 8;
+const CARBON_INTERVAL_MEMORY_MS = 24 * 60 * 60 * 1000;
 
-/** Infer settlement period from the next funding timestamp. Carbon's UI
- * labels vanilla perps as 8h (00/08/16 UTC). Names that fund on an off-hour
- * (ONE at :00 of hour 15, etc.) settle hourly — treating those as 4h/8h
- * understated ONE's short APR (~−240% vs Carbon's ~−1000%). */
-function carbonFundingHours(nextMs: number | null): number {
-  if (nextMs == null || nextMs < 1e12) return CARBON_DEFAULT_FUNDING_HOURS;
+/** Dernière observation par marché Carbon et par palier (1 / 4 / 8 h). */
+const carbonIntervalSeen = new Map<
+  string,
+  Partial<Record<1 | 4 | 8, number>>
+>();
+
+/** Lit l’heure UTC du prochain paiement : 00/08/16 → 8 h, autre multiple de 4 → 4 h, sinon 1 h. */
+function carbonHourBucket(nextMs: number): 1 | 4 | 8 {
   const hour = new Date(nextMs).getUTCHours();
   if (hour % 8 === 0) return 8;
   if (hour % 4 === 0) return 4;
   return 1;
+}
+
+/**
+ * Intervalle Carbon pour un marché (ex. ONEUSDT).
+ * Un horaire paie aussi à 00/04/08/12/16/20 UTC : sans mémoire, il passerait
+ * en 4 h ou 8 h dans l’heure qui précède. On retient le plus petit palier
+ * vu dans les 24 dernières heures (observation actuelle comprise).
+ */
+function carbonFundingHours(market: string, nextMs: number | null): number {
+  if (nextMs == null || nextMs < 1e12) return CARBON_DEFAULT_FUNDING_HOURS;
+  const now = Date.now();
+  const observed = carbonHourBucket(nextMs);
+  const memory = { ...(carbonIntervalSeen.get(market) ?? {}) };
+  memory[observed] = now;
+  for (const hours of [1, 4, 8] as const) {
+    const seenAt = memory[hours];
+    if (seenAt != null && now - seenAt > CARBON_INTERVAL_MEMORY_MS) {
+      delete memory[hours];
+    }
+  }
+  carbonIntervalSeen.set(market, memory);
+  const live = ([1, 4, 8] as const).filter((hours) => memory[hours] != null);
+  return live.length ? Math.min(...live) : CARBON_DEFAULT_FUNDING_HOURS;
 }
 const EXTENDED_URL =
   "https://api.starknet.extended.exchange/api/v1/info/markets";
@@ -209,7 +235,7 @@ export async function fetchCarbon(
     if (!symbol || comparable == null) continue;
     const hours =
       fundingHoursOverride ??
-      carbonFundingHours(toNumber(info.next_funding_time));
+      carbonFundingHours(name, toNumber(info.next_funding_time));
     const aprLong = intervalApr(rateLong!, hours);
     const aprShort = intervalApr(rateShort!, hours);
     if (aprLong == null || aprShort == null) continue;
@@ -224,6 +250,7 @@ export async function fetchCarbon(
       costPct: (feeOpen! + feeClose!) * 100,
       fundingHours: hours,
       pnlBySide: true,
+      oiIsCap: true,
     });
   }
   return legs;

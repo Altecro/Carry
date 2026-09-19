@@ -65,7 +65,7 @@ export function opportunityText(
   longApr: number,
   shortEx: string,
   shortApr: number,
-  oi: number,
+  oi: number | null,
   volume: number | null,
   priceGap: number,
   cost: number,

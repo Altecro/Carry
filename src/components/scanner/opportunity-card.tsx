@@ -34,6 +34,11 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
     (v): v is number => v != null,
   );
   const volMin = volumes.length ? Math.min(...volumes) : null;
+  // Carbon : plafond, pas un OI — on l’écarte du « OI min ».
+  const oiValues = [opp.long, opp.short]
+    .filter((leg) => !leg.oiIsCap)
+    .map((leg) => leg.oi);
+  const oiMin = oiValues.length ? Math.min(...oiValues) : null;
 
   async function copy() {
     const text = opportunityText(
@@ -45,7 +50,7 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
       opp.long.apr,
       venueName(opp.short.exchange),
       opp.short.apr,
-      Math.min(opp.long.oi, opp.short.oi),
+      oiMin,
       volMin,
       opp.priceGap,
       opp.cost,
@@ -128,6 +133,7 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
           exchange={venueName(opp.long.exchange)}
           apr={opp.long.apr}
           oi={opp.long.oi}
+          oiIsCap={opp.long.oiIsCap}
           fundingHours={opp.long.fundingHours}
         />
         <LegRow
@@ -136,6 +142,7 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
           exchange={venueName(opp.short.exchange)}
           apr={opp.short.apr}
           oi={opp.short.oi}
+          oiIsCap={opp.short.oiIsCap}
           fundingHours={opp.short.fundingHours}
         />
       </div>
@@ -144,7 +151,7 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
         <div>
           <dt className="inline text-subtle">{t("oiMin")} </dt>
           <dd className="inline">
-            {fmtUsd(Math.min(opp.long.oi, opp.short.oi), locale)}
+            {fmtUsd(oiMin, locale)}
           </dd>
         </div>
         <div>
@@ -213,6 +220,7 @@ function LegRow({
   exchange,
   apr,
   oi,
+  oiIsCap,
   fundingHours,
 }: {
   side: "long" | "short";
@@ -220,6 +228,7 @@ function LegRow({
   exchange: string;
   apr: number;
   oi: number;
+  oiIsCap?: boolean;
   fundingHours?: number;
 }) {
   const { locale, t } = useT();
@@ -239,7 +248,7 @@ function LegRow({
             {exchange}
           </p>
           <p className="font-mono text-xs text-muted tabular-nums">
-            {t("oi")} {fmtUsd(oi, locale)}
+            {oiIsCap ? "max" : t("oi")} {fmtUsd(oi, locale)}
             {interval ? (
               <>
                 {" · "}
