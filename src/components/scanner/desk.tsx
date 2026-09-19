@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, SlidersHorizontal } from "lucide-react";
@@ -22,6 +23,7 @@ import { FilterPanel } from "./filters";
 import { OpportunityCard } from "./opportunity-card";
 import { SpreadChart } from "./spread-chart";
 import { LanguageSwitch } from "./language-switch";
+import { Brand, GuideLink } from "./brand";
 import { cn } from "@/lib/utils";
 
 export function Desk() {
@@ -91,6 +93,7 @@ export function Desk() {
           <div className="flex flex-col gap-3 px-6 pb-4">
             <LanguageSwitch />
             <RefreshButton loading={loading} elapsed={elapsed} onRefresh={onRefresh} />
+            <GuideLink />
           </div>
           <div className="flex-1 px-6 pb-8">
             <FilterPanel
@@ -110,6 +113,7 @@ export function Desk() {
               </div>
               <div className="ml-auto flex items-center gap-2">
                 <LanguageSwitch compact />
+                <GuideLink compact />
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="icon">
@@ -174,7 +178,13 @@ export function Desk() {
                 className="sm:max-w-xs"
               />
               <p className="text-pretty text-xs text-muted">
-                {t("disclaimer", { notional: fmtUsd(filters.notional, locale) })}
+                {t("disclaimer", { notional: fmtUsd(filters.notional, locale) })}{" "}
+                <Link
+                  to="/docs"
+                  className="text-fg underline-offset-2 hover:underline"
+                >
+                  {t("guide")}
+                </Link>
               </p>
             </div>
 
@@ -250,20 +260,6 @@ function RefreshButton({
       <RefreshCw className={cn("size-4", loading && "animate-spin")} />
       {loading ? (elapsed ? `${(elapsed / 1000).toFixed(0)} s` : t("scanning")) : t("refresh")}
     </Button>
-  );
-}
-
-function Brand({ compact = false }: { compact?: boolean }) {
-  const { t } = useT();
-  return (
-    <div className="min-w-0">
-      <p className="font-display text-2xl font-medium tracking-tight text-fg">
-        Carry
-      </p>
-      {compact ? null : (
-        <p className="mt-1 text-pretty text-sm text-muted">{t("tagline")}</p>
-      )}
-    </div>
   );
 }
 

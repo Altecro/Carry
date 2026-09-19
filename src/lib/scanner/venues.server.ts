@@ -22,7 +22,19 @@ const VARIATIONAL_URL =
 const HYPERLIQUID_URL = "https://api.hyperliquid.xyz/info";
 const CARBON_BASE = "https://gw.carbon.inc/v1";
 const CARBON_CHAIN_ID = 42161;
-const CARBON_FUNDING_HOURS = 4;
+const CARBON_DEFAULT_FUNDING_HOURS = 8;
+
+/** Infer settlement period from the next funding timestamp. Carbon's UI
+ * labels vanilla perps as 8h (00/08/16 UTC). Names that fund on an off-hour
+ * (ONE at :00 of hour 15, etc.) settle hourly — treating those as 4h/8h
+ * understated ONE's short APR (~−240% vs Carbon's ~−1000%). */
+function carbonFundingHours(nextMs: number | null): number {
+  if (nextMs == null || nextMs < 1e12) return CARBON_DEFAULT_FUNDING_HOURS;
+  const hour = new Date(nextMs).getUTCHours();
+  if (hour % 8 === 0) return 8;
+  if (hour % 4 === 0) return 4;
+  return 1;
+}
 const EXTENDED_URL =
   "https://api.starknet.extended.exchange/api/v1/info/markets";
 const LIGHTER_BASE = "https://mainnet.zklighter.elliot.ai";
@@ -150,6 +162,7 @@ export async function fetchCarbon(
   signal?: AbortSignal,
   solver = "PERPS_HUB",
   exchangeName = "carbon",
+  fundingHoursOverride?: number,
 ): Promise<Legs> {
   const marketsPayload = await getJson(
     "Carbon",
@@ -173,7 +186,6 @@ export async function fetchCarbon(
     )
     .map(([name]) => name);
   const prices = await fetchCarbonMarkPrices(tickers, signal);
-  const intervalsPerYear = (24 / CARBON_FUNDING_HOURS) * 365;
   const legs: Legs = {};
   for (const [name, specRaw] of Object.entries(listings)) {
     const spec = asRecord(specRaw);
@@ -195,8 +207,12 @@ export async function fetchCarbon(
     if (price! <= 0 || notionalCap! <= 0) continue;
     const [symbol, comparable] = carbonNormalize(name, price!);
     if (!symbol || comparable == null) continue;
-    const aprLong = rateLong! * intervalsPerYear * 100;
-    const aprShort = rateShort! * intervalsPerYear * 100;
+    const hours =
+      fundingHoursOverride ??
+      carbonFundingHours(toNumber(info.next_funding_time));
+    const aprLong = intervalApr(rateLong!, hours);
+    const aprShort = intervalApr(rateShort!, hours);
+    if (aprLong == null || aprShort == null) continue;
     put(legs, symbol, {
       exchange: exchangeName,
       apr: (aprLong + aprShort) / 2,
@@ -206,14 +222,15 @@ export async function fetchCarbon(
       volume: null,
       price: comparable,
       costPct: (feeOpen! + feeClose!) * 100,
-      fundingHours: CARBON_FUNDING_HOURS,
+      fundingHours: hours,
+      pnlBySide: true,
     });
   }
   return legs;
 }
 
 export function fetchCarbonTradfi(signal?: AbortSignal): Promise<Legs> {
-  return fetchCarbon(signal, "NOXRWA", "carbon_tradfi");
+  return fetchCarbon(signal, "NOXRWA", "carbon_tradfi", 24);
 }
 
 export async function fetchExtended(signal?: AbortSignal): Promise<Legs> {

@@ -10,6 +10,8 @@ export type Leg = {
   costPct: number;
   /** Funding payment interval in hours, when known. */
   fundingHours?: number;
+  /** Carbon: aprLong/aprShort are that side's PnL (positive = that side is paid). */
+  pnlBySide?: boolean;
 };
 
 export type Opportunity = {

@@ -3,8 +3,8 @@ export const VENUE_URL: Record<string, string> = {
   // forces a navigation; the access code still has to be entered on first signup.
   variational: "https://omni.variational.io/markets?ref=OMNI35WM137P",
   hyperliquid: "https://app.hyperliquid.xyz/join/AMYUKI",
-  carbon: "https://app.carbon.inc/trade?ref=Amyuki",
-  carbon_tradfi: "https://app.carbon.inc/tradfi?ref=Amyuki",
+  carbon: "https://app.carbon.inc/ref/Amyuki",
+  carbon_tradfi: "https://app.carbon.inc/ref/Amyuki",
   extended: "https://app.extended.exchange",
   lighter: "https://app.lighter.xyz/?referral=AMYUKI&source=none",
   paradex: "https://app.paradex.trade/r/Amyuki",

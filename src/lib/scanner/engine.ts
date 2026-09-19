@@ -1,8 +1,20 @@
 import type { Filters, Leg, Opportunity } from "./types";
 
 function sideApr(leg: Leg, side: "long" | "short"): number {
-  if (side === "long") return leg.aprLong ?? leg.apr;
+  if (side === "long") {
+    const value = leg.aprLong ?? leg.apr;
+    // Carbon quotes the long's PnL; other venues quote longs-pay-positive.
+    return leg.pnlBySide ? -value : value;
+  }
   return leg.aprShort ?? leg.apr;
+}
+
+function displayApr(leg: Leg, side: "long" | "short"): number {
+  const value = side === "long" ? (leg.aprLong ?? leg.apr) : (leg.aprShort ?? leg.apr);
+  // Show PnL of that side: Carbon already stores it; other venues
+  // quote longs-pay-positive so the long is flipped, the short is not.
+  if (side === "long") return leg.pnlBySide ? value : -value;
+  return value;
 }
 
 function breakevenHours(spreadApr: number, costPct: number): number {
@@ -46,8 +58,8 @@ function bestPair(
       if (hours > filters.maxBreakevenHours) continue;
       best = {
         symbol,
-        long: { ...longLeg, apr: longApr },
-        short: { ...shortLeg, apr: shortApr },
+        long: { ...longLeg, apr: displayApr(longLeg, "long") },
+        short: { ...shortLeg, apr: displayApr(shortLeg, "short") },
         spread,
         priceGap,
         cost,

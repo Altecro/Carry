@@ -82,6 +82,8 @@ const fr = {
   million: "M$",
   thousand: "k$",
   dayShort: "j",
+  guide: "Guide",
+  backToScan: "Scanner",
 };
 
 const en: Record<keyof typeof fr, string> = {
@@ -160,6 +162,8 @@ const en: Record<keyof typeof fr, string> = {
   million: "M$",
   thousand: "k$",
   dayShort: "d",
+  guide: "Guide",
+  backToScan: "Scanner",
 };
 
 export const messages = { fr, en } as const;
