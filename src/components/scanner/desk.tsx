@@ -23,7 +23,7 @@ import { FilterPanel } from "./filters";
 import { OpportunityCard } from "./opportunity-card";
 import { SpreadChart } from "./spread-chart";
 import { LanguageSwitch } from "./language-switch";
-import { Brand, GuideLink } from "./brand";
+import { Brand, GuideLink, ResearchLink } from "./brand";
 import { cn } from "@/lib/utils";
 
 export function Desk() {
@@ -93,6 +93,7 @@ export function Desk() {
           <div className="flex flex-col gap-3 px-6 pb-4">
             <LanguageSwitch />
             <RefreshButton loading={loading} elapsed={elapsed} onRefresh={onRefresh} />
+            <ResearchLink />
             <GuideLink />
           </div>
           <div className="flex-1 px-6 pb-8">
@@ -111,6 +112,7 @@ export function Desk() {
               <Brand compact />
               <div className="ml-auto flex shrink-0 items-center gap-1">
                 <LanguageSwitch compact />
+                <ResearchLink compact />
                 <GuideLink compact />
                 <Sheet>
                   <SheetTrigger asChild>

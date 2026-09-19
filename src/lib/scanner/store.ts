@@ -28,3 +28,31 @@ export const useFilters = create<FilterState>()(
     },
   ),
 );
+
+const DEFAULT_RESEARCH_VENUES = ["variational", "hyperliquid"];
+
+type ResearchState = {
+  venues: string[];
+  toggle: (id: string) => void;
+  reset: () => void;
+};
+
+export const useResearch = create<ResearchState>()(
+  persist(
+    (set, get) => ({
+      venues: DEFAULT_RESEARCH_VENUES,
+      toggle: (id) => {
+        const current = get().venues;
+        const next = current.includes(id)
+          ? current.filter((item) => item !== id)
+          : [...current, id];
+        set({ venues: next });
+      },
+      reset: () => set({ venues: DEFAULT_RESEARCH_VENUES }),
+    }),
+    {
+      name: "carry-research",
+      partialize: (state) => ({ venues: state.venues }),
+    },
+  ),
+);

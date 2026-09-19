@@ -1,0 +1,40 @@
+{
+  "url": "http://127.0.0.1:8081/research",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Carry · Recherche",
+      "hasCanvas": false,
+      "bodyTextLen": 459,
+      "bodyTextHash": "fc28292f3f4d0e049d06bbf3358c71a0ee9bee8c3ba3365d31e4594e8e74b68c",
+      "bodyTextPrefix": "Carry FR ? Scanner Recherche Choisis au moins deux places. Carry",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/research-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Carry · Recherche",
+      "hasCanvas": false,
+      "bodyTextLen": 451,
+      "bodyTextHash": "6d3dada11fd5c074cf5261bbc43afd2130b56886b0e569cfb05d21d217b4ef73",
+      "bodyTextPrefix": "Carry FR ? Recherche Choisis au moins deux places. Carry ne croi",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/research-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/research-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "mobile: body text collapsed (1009 -> 451 chars)"
+  ]
+}

@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowLeft, ArrowUpRight } from "lucide-react";
 import { DOCS } from "@/lib/i18n/docs";
 import { useT } from "@/lib/i18n/store";
-import { Brand } from "./brand";
+import { Brand, ResearchLink } from "./brand";
 import { LanguageSwitch } from "./language-switch";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ export function DocsPage() {
           <Brand compact />
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitch compact />
+            <ResearchLink compact />
             <Link
               to="/"
               className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-muted hover:bg-surface-2 hover:text-fg"

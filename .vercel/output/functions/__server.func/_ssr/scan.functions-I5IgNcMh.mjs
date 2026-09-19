@@ -1,5 +1,5 @@
 import { n as TSS_SERVER_FUNCTION, t as createServerFn } from "./ssr.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/scan.functions-8TncMO4P.js
+//#region node_modules/.nitro/vite/services/ssr/assets/scan.functions-I5IgNcMh.js
 var createServerRpc = (serverFnMeta, splitImportFn) => {
 	const url = "/_serverFn/" + serverFnMeta.id;
 	return Object.assign(splitImportFn, {
@@ -16,7 +16,7 @@ var runScan_createServerFn_handler = createServerRpc({
 var runScan = createServerFn({ method: "POST" }).validator((data) => {
 	return { force: Boolean((data && typeof data === "object" ? data : {}).force) };
 }).handler(runScan_createServerFn_handler, async ({ data }) => {
-	const { executeScan } = await import("./run.server-uti7dW0k.mjs");
+	const { executeScan } = await import("./run.server-BkfOaSst.mjs");
 	return executeScan(data.force);
 });
 //#endregion

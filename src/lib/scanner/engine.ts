@@ -80,15 +80,42 @@ export function findOpportunities(
   legsBySymbol: Record<string, Leg[]>,
   filters: Filters,
 ): Opportunity[] {
+  return collectOpportunities(legsBySymbol, filters, null);
+}
+
+/** Paires parmi un ensemble de places, classées par écart (recherche). */
+export function findResearchPairs(
+  legsBySymbol: Record<string, Leg[]>,
+  filters: Filters,
+  venueIds: string[],
+): Opportunity[] {
+  if (venueIds.length < 2) return [];
+  return collectOpportunities(
+    legsBySymbol,
+    { ...filters, minSpreadApr: 0, disabledVenues: [] },
+    new Set(venueIds),
+  );
+}
+
+function collectOpportunities(
+  legsBySymbol: Record<string, Leg[]>,
+  filters: Filters,
+  allow: Set<string> | null,
+): Opportunity[] {
   const disabled = new Set(filters.disabledVenues);
   const query = filters.query.trim().toUpperCase();
   const opportunities: Opportunity[] = [];
 
   for (const [symbol, legs] of Object.entries(legsBySymbol)) {
     if (query && !symbol.includes(query)) continue;
-    const liquid = legs.filter(
-      (leg) => !disabled.has(leg.exchange) && isLiquid(leg, filters),
-    );
+    const liquid = legs.filter((leg) => {
+      if (allow) {
+        if (!allow.has(leg.exchange)) return false;
+      } else if (disabled.has(leg.exchange)) {
+        return false;
+      }
+      return isLiquid(leg, filters);
+    });
     if (liquid.length < 2) continue;
     const opportunity = bestPair(symbol, liquid, filters);
     if (opportunity) opportunities.push(opportunity);

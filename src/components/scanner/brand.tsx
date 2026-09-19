@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { useT } from "@/lib/i18n/store";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,22 @@ export function Brand({ compact = false }: { compact?: boolean }) {
           </span>
         )}
       </span>
+    </Link>
+  );
+}
+
+export function ResearchLink({ compact = false }: { compact?: boolean }) {
+  const { t } = useT();
+  return (
+    <Link
+      to="/research"
+      aria-label={t("research")}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md text-sm text-muted hover:bg-surface-2 hover:text-fg",
+        compact ? "size-11 shrink-0 px-0" : "h-11 w-full px-3",
+      )}
+    >
+      {compact ? <Search className="size-4" /> : t("research")}
     </Link>
   );
 }

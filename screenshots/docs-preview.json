@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/docs",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Carry · Guide",
+      "hasCanvas": false,
+      "bodyTextLen": 4219,
+      "bodyTextHash": "17e6593e21881cb91decf0cfd13e981f3979c7c2ceeef38d10a6eb76e4b520c5",
+      "bodyTextPrefix": "Carry FR Scanner GUIDE Comment lire Carry Carry croise les fundi",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/docs-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Carry · Guide",
+      "hasCanvas": false,
+      "bodyTextLen": 4219,
+      "bodyTextHash": "17e6593e21881cb91decf0cfd13e981f3979c7c2ceeef38d10a6eb76e4b520c5",
+      "bodyTextPrefix": "Carry FR Scanner GUIDE Comment lire Carry Carry croise les fundi",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/docs-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/docs-preview.json"
+}

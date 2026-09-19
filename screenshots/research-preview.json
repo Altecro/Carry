@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/research",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Carry · Recherche",
+      "hasCanvas": false,
+      "bodyTextLen": 459,
+      "bodyTextHash": "fc28292f3f4d0e049d06bbf3358c71a0ee9bee8c3ba3365d31e4594e8e74b68c",
+      "bodyTextPrefix": "Carry FR ? Scanner Recherche Choisis au moins deux places. Carry",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/research-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Carry · Recherche",
+      "hasCanvas": false,
+      "bodyTextLen": 1009,
+      "bodyTextHash": "33360579e4e89d73960f08692a3108e66f10eca6098aca6da29600141138addc",
+      "bodyTextPrefix": "Carry FR ? Recherche Choisis au moins deux places. Carry ne croi",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/research-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/research-preview.json"
+}

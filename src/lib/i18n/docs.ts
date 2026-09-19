@@ -114,6 +114,29 @@ const fr: DocsCopy = {
       ],
     },
     {
+      id: "recherche",
+      title: "Recherche",
+      blocks: [
+        {
+          type: "p",
+          text: "Le scanner croise toutes les places d’un coup. Recherche te laisse en choisir deux ou plus : Carry ne retient que les tokens cotés sur celles-ci et les classe du plus gros écart APR au plus petit.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Ouvre Recherche depuis le menu (loupe sur mobile).",
+            "Coche au moins deux DEX. Variational + Hyperliquid est le départ ; le bouton du même nom y revient.",
+            "Les seuils du scanner (OI, volume, écart de prix, remboursement) s’appliquent encore. L’écart min, non : toute paire positive est listée.",
+            "Une carte reste un LONG d’un côté et un SHORT de l’autre, parmi les places cochées.",
+          ],
+        },
+        {
+          type: "callout",
+          text: "Trois DEX cochés ne font pas un triangle. Carry prend toujours la meilleure paire à deux jambes parmi ceux que tu as gardés.",
+        },
+      ],
+    },
+    {
       id: "filtres",
       title: "Les lignes sous la carte",
       blocks: [
@@ -237,6 +260,29 @@ const en: DocsCopy = {
             "Tight — 45% spread, $100k OI. Fatter APRs, thinner books.",
             "Ultra — under $50k OI. Slippage, partial fills, sometimes ghost rates. Tiny size.",
           ],
+        },
+      ],
+    },
+    {
+      id: "recherche",
+      title: "Research",
+      blocks: [
+        {
+          type: "p",
+          text: "The scanner crosses every venue at once. Research lets you pick two or more: Carry keeps only tokens listed on those venues and ranks them from largest APR spread to smallest.",
+        },
+        {
+          type: "ul",
+          items: [
+            "Open Research from the menu (magnifying glass on mobile).",
+            "Select at least two DEXes. Variational + Hyperliquid is the default; the same-named button restores it.",
+            "Scanner thresholds (OI, volume, price gap, payback) still apply. Min spread does not: every positive pair is listed.",
+            "A card is still one LONG and one SHORT, among the venues you checked.",
+          ],
+        },
+        {
+          type: "callout",
+          text: "Three checked DEXes do not make a triangle. Carry always picks the best two-leg pair among the ones you kept.",
         },
       ],
     },

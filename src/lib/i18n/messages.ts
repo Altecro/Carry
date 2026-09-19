@@ -83,6 +83,14 @@ const fr = {
   thousand: "k$",
   dayShort: "j",
   guide: "Guide",
+  research: "Recherche",
+  researchLead:
+    "Choisis au moins deux places. Carry ne croise que celles-ci et classe les tokens par écart APR.",
+  researchNeedTwo: "Sélectionne au moins deux DEX pour lancer le croisement.",
+  researchEmpty:
+    "Aucun token commun liquide sur ces places avec les seuils actuels (OI, volume, écart de prix).",
+  researchOverlap: "Tokens communs",
+  researchReset: "Variational + Hyperliquid",
   backToScan: "Scanner",
 };
 
@@ -163,6 +171,14 @@ const en: Record<keyof typeof fr, string> = {
   thousand: "k$",
   dayShort: "d",
   guide: "Guide",
+  research: "Research",
+  researchLead:
+    "Pick at least two venues. Carry crosses only those and ranks tokens by APR spread.",
+  researchNeedTwo: "Select at least two DEXes to run the cross.",
+  researchEmpty:
+    "No liquid overlapping tokens on these venues with the current thresholds (OI, volume, price gap).",
+  researchOverlap: "Shared tokens",
+  researchReset: "Variational + Hyperliquid",
   backToScan: "Scanner",
 };
 

@@ -95,6 +95,19 @@ var ArrowDownRight = createLucideIcon("arrow-down-right", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ArrowLeft = createLucideIcon("arrow-left", [["path", {
+	d: "m12 19-7-7 7-7",
+	key: "1l729n"
+}], ["path", {
+	d: "M19 12H5",
+	key: "x3x0zl"
+}]]);
+/**
+* @license lucide-react v0.510.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ArrowUpRight = createLucideIcon("arrow-up-right", [["path", {
 	d: "M7 7h10v10",
 	key: "1tivn9"
@@ -154,6 +167,21 @@ var RefreshCw = createLucideIcon("refresh-cw", [
 		key: "1cv678"
 	}]
 ]);
+/**
+* @license lucide-react v0.510.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Search = createLucideIcon("search", [["path", {
+	d: "m21 21-4.34-4.34",
+	key: "14j7rj"
+}], ["circle", {
+	cx: "11",
+	cy: "11",
+	r: "8",
+	key: "4ej97u"
+}]]);
 /**
 * @license lucide-react v0.510.0 - ISC
 *
@@ -259,4 +287,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { Copy as a, ArrowDownRight as c, RefreshCw as i, TriangleAlert as n, Check as o, SlidersHorizontal as r, ArrowUpRight as s, X as t };
+export { RefreshCw as a, ArrowUpRight as c, Search as i, ArrowLeft as l, TriangleAlert as n, Copy as o, SlidersHorizontal as r, Check as s, X as t, ArrowDownRight as u };

@@ -1,6 +1,6 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
-import { _ as useRouter, f as createRouter, g as createRootRoute, h as createFileRoute, l as Scripts, m as lazyRouteComponent, p as Outlet, u as HeadContent } from "../_libs/@tanstack/react-router+[...].mjs";
+import { f as createRouter, g as createRootRoute, h as createFileRoute, l as Scripts, m as lazyRouteComponent, p as Outlet, u as HeadContent, v as useRouter } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { n as TriangleAlert } from "../_libs/lucide-react.mjs";
 import { r as QueryClientProvider } from "../_libs/tanstack__react-query.mjs";
@@ -9,7 +9,7 @@ import { a as union, i as string, n as number, r as object, t as literal } from 
 import { n as Portal, r as Provider, t as Content2 } from "../_libs/@radix-ui/react-tooltip+[...].mjs";
 import { n as clsx } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-DaRlC5bE.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-CWg1nYs3.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var __defProp = Object.defineProperty;
@@ -324,9 +324,18 @@ var TooltipContent = import_react.forwardRef(({ className, sideOffset = 6, ...pr
 	...props
 }) }));
 TooltipContent.displayName = Content2.displayName;
-var styles_default = "/assets/styles-DPoqrNgH.css";
-var APP_NAME = "Écart";
-var Route$1 = createRootRoute({
+var styles_default = "/assets/styles-oe_rM6Kp.css";
+var APP_NAME = "Carry";
+function publicShareHost() {
+	const raw = String("").split(",")[0].trim().split(":")[0].toLowerCase();
+	if (!raw || !/^[a-z0-9.-]+$/.test(raw) || !raw.includes(".")) return "";
+	if (raw === "vercel.app" || raw.endsWith(".vercel.app") || raw === "vercel.com" || raw.endsWith(".vercel.com")) return "";
+	return raw;
+}
+var host = publicShareHost();
+var ogImage = host ? `https://${host}/og.jpg` : void 0;
+var xBanner = host ? `https://${host}/x-banner.jpg` : void 0;
+var Route$3 = createRootRoute({
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -337,12 +346,40 @@ var Route$1 = createRootRoute({
 			{ title: APP_NAME },
 			{
 				name: "description",
-				content: "Scanner d’arbitrage de funding : LONG sur un DEX, SHORT sur un autre. Lecture seule."
+				content: "Carry — find your funding. LONG one DEX, SHORT another. Read-only."
 			},
 			{
 				name: "theme-color",
 				content: "#0c0d0b"
-			}
+			},
+			...ogImage ? [
+				{
+					property: "og:image",
+					content: ogImage
+				},
+				{
+					property: "og:image:width",
+					content: "1200"
+				},
+				{
+					property: "og:image:height",
+					content: "630"
+				}
+			] : [],
+			...xBanner ? [
+				{
+					property: "x:game:image",
+					content: xBanner
+				},
+				{
+					property: "x:game:image:width",
+					content: "1200"
+				},
+				{
+					property: "x:game:image:height",
+					content: "264"
+				}
+			] : []
 		],
 		links: [
 			{
@@ -388,13 +425,36 @@ function RootDocument() {
 		] })]
 	});
 }
-var $$splitComponentImporter = () => import("./routes-DyNLw9P6.mjs");
-var rootRouteChildren = { IndexRoute: createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter, "component") }).update({
-	id: "/",
-	path: "/",
-	getParentRoute: () => Route$1
-}) };
-var routeTree = Route$1._addFileChildren(rootRouteChildren)._addFileTypes();
+var $$splitComponentImporter$2 = () => import("./routes-prjmYz90.mjs");
+var Route$2 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
+var $$splitComponentImporter$1 = () => import("./docs-nS7j7gAV.mjs");
+var Route$1 = createFileRoute("/docs")({
+	component: lazyRouteComponent($$splitComponentImporter$1, "component"),
+	head: () => ({ meta: [{ title: "Carry · Guide" }] })
+});
+var $$splitComponentImporter = () => import("./research-BOkGtfSL.mjs");
+var Route = createFileRoute("/research")({
+	component: lazyRouteComponent($$splitComponentImporter, "component"),
+	head: () => ({ meta: [{ title: "Carry · Recherche" }] })
+});
+var rootRouteChildren = {
+	IndexRoute: Route$2.update({
+		id: "/",
+		path: "/",
+		getParentRoute: () => Route$3
+	}),
+	DocsRoute: Route$1.update({
+		id: "/docs",
+		path: "/docs",
+		getParentRoute: () => Route$3
+	}),
+	ResearchRoute: Route.update({
+		id: "/research",
+		path: "/research",
+		getParentRoute: () => Route$3
+	})
+};
+var routeTree = Route$3._addFileChildren(rootRouteChildren)._addFileTypes();
 var router_exports = /* @__PURE__ */ __exportAll({ getRouter: () => getRouter });
 function getRouter() {
 	return createRouter({
