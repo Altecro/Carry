@@ -22,12 +22,13 @@ export function SpreadChart({ items }: { items: Opportunity[] }) {
       <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
         {t("topSpreads")}
       </p>
-      <div className="h-40 sm:h-44">
+      <div className="h-52 sm:h-56">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
             layout="vertical"
-            margin={{ left: 8, right: 16, top: 0, bottom: 0 }}
+            margin={{ left: 4, right: 16, top: 4, bottom: 4 }}
+            barCategoryGap={6}
           >
             <XAxis
               type="number"
@@ -39,8 +40,14 @@ export function SpreadChart({ items }: { items: Opportunity[] }) {
             <YAxis
               type="category"
               dataKey="symbol"
-              width={56}
-              tick={{ fill: "var(--color-fg)", fontSize: 11 }}
+              width={58}
+              interval={0}
+              minTickGap={0}
+              tick={{
+                fill: "var(--color-fg)",
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+              }}
               axisLine={false}
               tickLine={false}
             />

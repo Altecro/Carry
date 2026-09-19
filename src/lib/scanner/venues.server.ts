@@ -367,12 +367,12 @@ export async function fetchParadex(signal?: AbortSignal): Promise<Legs> {
 
 export async function fetchOrderly(signal?: AbortSignal): Promise<Legs> {
   const payload = asRecord(
-    await getJson("Orderly", "https://api.orderly.org/v1/public/futures", {
+    await getJson("WOOFi", "https://api.orderly.org/v1/public/futures", {
       signal,
     }),
   );
   const rows = asList(asRecord(payload.data).rows);
-  if (!rows.length) throw new FatalError("Orderly : format inattendu");
+  if (!rows.length) throw new FatalError("WOOFi : format inattendu");
   const legs: Legs = {};
   for (const raw of rows) {
     const row = asRecord(raw);
@@ -886,6 +886,123 @@ export async function fetchPolymarket(signal?: AbortSignal): Promise<Legs> {
   return legs;
 }
 
+const ARCUS_TAKER_FEE_PCT = 0.0225; // 225 ppm base tier
+
+export async function fetchArcus(signal?: AbortSignal): Promise<Legs> {
+  const payload = asRecord(
+    await getJson("Arcus", "https://api.arcus.xyz/v1/markets", { signal }),
+  );
+  const rows = asList(payload.markets);
+  if (!rows.length) throw new FatalError("Arcus : format inattendu");
+  const legs: Legs = {};
+  for (const raw of rows) {
+    const row = asRecord(raw);
+    if (row.status !== "ONLINE" || row.type !== "PERPETUAL") continue;
+    const name = row.marketDisplayName ?? row.baseAsset;
+    const rate =
+      toNumber(row.nextFundingRate) ?? toNumber(row.fundingRate);
+    const price = toNumber(row.markPrice) ?? toNumber(row.oraclePrice);
+    const oiBase = toNumber(row.openInterest);
+    const volume = toNumber(row.volume24hNotional);
+    if (
+      typeof name !== "string" ||
+      [rate, price, oiBase].some((v) => v == null) ||
+      price! <= 0
+    ) {
+      continue;
+    }
+    const symbol = venueSymbol(name);
+    const apr = intervalApr(rate!, 1);
+    if (!symbol || apr == null) continue;
+    put(legs, symbol, {
+      exchange: "arcus",
+      apr,
+      oi: oiBase! * price!,
+      volume: volume ?? null,
+      price: price!,
+      costPct: 2 * ARCUS_TAKER_FEE_PCT,
+      fundingHours: 1,
+    });
+  }
+  return legs;
+}
+
+const POPDEX_TAKER_FEE_PCT = 0.032;
+
+async function fetchPopdexTickers(signal?: AbortSignal): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  let cursor: number | string | undefined;
+  for (let page = 0; page < 20; page++) {
+    const payload = asRecord(
+      await getJson("PopDEX", "https://api.popdex.xyz/api/v1/public/market/tickers", {
+        signal,
+        params: cursor == null ? undefined : { cursor },
+      }),
+    );
+    const chunk = asList(payload.data);
+    rows.push(...chunk);
+    const next = payload.cursor;
+    const total = toNumber(payload.total);
+    if (!chunk.length) break;
+    if (total != null && rows.length >= total) break;
+    if (next == null || next === cursor) break;
+    cursor = typeof next === "string" || typeof next === "number" ? next : String(next);
+  }
+  return rows;
+}
+
+export async function fetchPopdex(signal?: AbortSignal): Promise<Legs> {
+  const [tickers, symbolsPayload] = await Promise.all([
+    fetchPopdexTickers(signal),
+    getJson("PopDEX", "https://api.popdex.xyz/api/v1/config/symbols", { signal }),
+  ]);
+  if (!tickers.length) throw new FatalError("PopDEX : format inattendu");
+  const hoursBySymbol = new Map<string, number>();
+  for (const raw of asList(asRecord(symbolsPayload).data)) {
+    const row = asRecord(raw);
+    const name = row.symbol;
+    if (typeof name !== "string") continue;
+    hoursBySymbol.set(name, toNumber(row.fundingInterval) || 1);
+  }
+  const legs: Legs = {};
+  for (const raw of tickers) {
+    const row = asRecord(raw);
+    if (row.status != null && row.status !== "Trading") continue;
+    const name = row.symbol;
+    const rate = toNumber(row.fundingRate);
+    const price = toNumber(row.markPrice) ?? toNumber(row.lastPrice);
+    const oiBase = toNumber(row.openInterest);
+    const volume = toNumber(row.turnover24h);
+    const bid = toNumber(row.bid1Price);
+    const ask = toNumber(row.ask1Price);
+    if (
+      typeof name !== "string" ||
+      [rate, price, oiBase].some((v) => v == null) ||
+      price! <= 0
+    ) {
+      continue;
+    }
+    const hours = hoursBySymbol.get(name) || 1;
+    const symbol = venueSymbol(name);
+    const apr = intervalApr(rate!, hours);
+    if (!symbol || apr == null) continue;
+    let spreadPct = 0;
+    if (bid && ask && bid > 0 && ask >= bid) {
+      spreadPct = ((ask - bid) / ((ask + bid) / 2)) * 100;
+    }
+    put(legs, symbol, {
+      exchange: "popdex",
+      apr,
+      oi: oiBase! * price!,
+      volume: volume ?? null,
+      price: price!,
+      costPct: 2 * POPDEX_TAKER_FEE_PCT + spreadPct,
+      fundingHours: hours,
+    });
+  }
+  return legs;
+}
+
 export const VENUE_LOADERS: {
   id: string;
   label: string;
@@ -897,7 +1014,7 @@ export const VENUE_LOADERS: {
   { id: "extended", label: "Extended", load: fetchExtended },
   { id: "lighter", label: "Lighter", load: fetchLighter },
   { id: "paradex", label: "Paradex", load: fetchParadex },
-  { id: "orderly", label: "Orderly", load: fetchOrderly },
+  { id: "orderly", label: "WOOFi", load: fetchOrderly },
   { id: "backpack", label: "Backpack", load: fetchBackpack },
   { id: "aster", label: "Aster", load: fetchAster },
   { id: "pacifica", label: "Pacifica", load: fetchPacifica },
@@ -907,6 +1024,8 @@ export const VENUE_LOADERS: {
   { id: "grvt", label: "GRVT", load: fetchGrvt },
   { id: "qfex", label: "QFEX", load: fetchQfex },
   { id: "polymarket", label: "Polymarket", load: fetchPolymarket },
+  { id: "arcus", label: "Arcus", load: fetchArcus },
+  { id: "popdex", label: "PopDEX", load: fetchPopdex },
 ];
 
 export { FatalError, TemporaryError };

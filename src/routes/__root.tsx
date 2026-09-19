@@ -13,6 +13,28 @@ import appCss from "../styles.css?url";
 
 const APP_NAME = "Carry";
 
+function publicShareHost(): string {
+  const raw = String(import.meta.env.VITE_PUBLIC_HOSTNAME ?? "")
+    .split(",")[0]
+    .trim()
+    .split(":")[0]
+    .toLowerCase();
+  if (!raw || !/^[a-z0-9.-]+$/.test(raw) || !raw.includes(".")) return "";
+  if (
+    raw === "vercel.app" ||
+    raw.endsWith(".vercel.app") ||
+    raw === "vercel.com" ||
+    raw.endsWith(".vercel.com")
+  ) {
+    return "";
+  }
+  return raw;
+}
+
+const host = publicShareHost();
+const ogImage = host ? `https://${host}/og.jpg` : undefined;
+const xBanner = host ? `https://${host}/x-banner.jpg` : undefined;
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -25,6 +47,20 @@ export const Route = createRootRoute({
           "Carry — find your funding. LONG one DEX, SHORT another. Read-only.",
       },
       { name: "theme-color", content: "#0c0d0b" },
+      ...(ogImage
+        ? [
+            { property: "og:image", content: ogImage },
+            { property: "og:image:width", content: "1200" },
+            { property: "og:image:height", content: "630" },
+          ]
+        : []),
+      ...(xBanner
+        ? [
+            { property: "x:game:image", content: xBanner },
+            { property: "x:game:image:width", content: "1200" },
+            { property: "x:game:image:height", content: "264" },
+          ]
+        : []),
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },

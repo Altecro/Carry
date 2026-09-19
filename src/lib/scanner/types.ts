@@ -56,7 +56,7 @@ export const VENUES = [
   { id: "extended", label: "Extended" },
   { id: "lighter", label: "Lighter" },
   { id: "paradex", label: "Paradex" },
-  { id: "orderly", label: "Orderly" },
+  { id: "orderly", label: "WOOFi" },
   { id: "backpack", label: "Backpack" },
   { id: "aster", label: "Aster" },
   { id: "pacifica", label: "Pacifica" },
@@ -66,6 +66,8 @@ export const VENUES = [
   { id: "grvt", label: "GRVT" },
   { id: "qfex", label: "QFEX" },
   { id: "polymarket", label: "Polymarket" },
+  { id: "arcus", label: "Arcus" },
+  { id: "popdex", label: "PopDEX" },
 ] as const;
 
 export const VENUE_LABEL: Record<string, string> = Object.fromEntries(
