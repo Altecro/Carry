@@ -1,4 +1,5 @@
 import type { Leg } from "./types";
+import carbonIntervalTable from "./carbon-intervals.json";
 import {
   asList,
   asRecord,
@@ -43,23 +44,33 @@ function carbonHourBucket(nextMs: number): 1 | 4 | 8 {
  * Intervalle Carbon pour un marché (ex. ONEUSDT).
  * Un horaire paie aussi à 00/04/08/12/16/20 UTC : sans mémoire, il passerait
  * en 4 h ou 8 h dans l’heure qui précède. On retient le plus petit palier
- * vu dans les 24 dernières heures (observation actuelle comprise).
+ * vu dans les 24 dernières heures (observation actuelle comprise), plafonné
+ * par la table de référence (générée en plage fiable) si le marché y figure.
  */
 function carbonFundingHours(market: string, nextMs: number | null): number {
-  if (nextMs == null || nextMs < 1e12) return CARBON_DEFAULT_FUNDING_HOURS;
-  const now = Date.now();
-  const observed = carbonHourBucket(nextMs);
-  const memory = { ...(carbonIntervalSeen.get(market) ?? {}) };
-  memory[observed] = now;
-  for (const hours of [1, 4, 8] as const) {
-    const seenAt = memory[hours];
-    if (seenAt != null && now - seenAt > CARBON_INTERVAL_MEMORY_MS) {
-      delete memory[hours];
+  let deduced = CARBON_DEFAULT_FUNDING_HOURS;
+  if (nextMs != null && nextMs >= 1e12) {
+    const now = Date.now();
+    const observed = carbonHourBucket(nextMs);
+    const memory = { ...(carbonIntervalSeen.get(market) ?? {}) };
+    memory[observed] = now;
+    for (const hours of [1, 4, 8] as const) {
+      const seenAt = memory[hours];
+      if (seenAt != null && now - seenAt > CARBON_INTERVAL_MEMORY_MS) {
+        delete memory[hours];
+      }
     }
+    carbonIntervalSeen.set(market, memory);
+    const live = ([1, 4, 8] as const).filter((hours) => memory[hours] != null);
+    deduced = live.length ? Math.min(...live) : CARBON_DEFAULT_FUNDING_HOURS;
   }
-  carbonIntervalSeen.set(market, memory);
-  const live = ([1, 4, 8] as const).filter((hours) => memory[hours] != null);
-  return live.length ? Math.min(...live) : CARBON_DEFAULT_FUNDING_HOURS;
+  const fromTable = (carbonIntervalTable.intervals as Record<string, number>)[
+    market
+  ];
+  if (fromTable === 1 || fromTable === 4 || fromTable === 8) {
+    return Math.min(fromTable, deduced);
+  }
+  return deduced;
 }
 const EXTENDED_URL =
   "https://api.starknet.extended.exchange/api/v1/info/markets";
@@ -399,7 +410,8 @@ export async function fetchParadex(signal?: AbortSignal): Promise<Legs> {
     put(legs, symbol, {
       exchange: "paradex",
       apr,
-      oi: oi! < price! * 10 ? oi! * price! : oi!,
+      // Doc Paradex : open_interest en monnaie de base.
+      oi: oi! * price!,
       volume: volume!,
       price: price!,
       costPct: 2 * 0.03,
@@ -410,13 +422,20 @@ export async function fetchParadex(signal?: AbortSignal): Promise<Legs> {
 }
 
 export async function fetchOrderly(signal?: AbortSignal): Promise<Legs> {
-  const payload = asRecord(
-    await getJson("WOOFi", "https://api.orderly.org/v1/public/futures", {
-      signal,
-    }),
-  );
-  const rows = asList(asRecord(payload.data).rows);
+  const [futuresPayload, infoPayload] = await Promise.all([
+    getJson("WOOFi", "https://api.orderly.org/v1/public/futures", { signal }),
+    getJson("WOOFi", "https://api.orderly.org/v1/public/info", { signal }),
+  ]);
+  const rows = asList(asRecord(asRecord(futuresPayload).data).rows);
   if (!rows.length) throw new FatalError("WOOFi : format inattendu");
+  const hoursBySymbol = new Map<unknown, number>();
+  for (const raw of asList(asRecord(asRecord(infoPayload).data).rows)) {
+    const spec = asRecord(raw);
+    const period = toNumber(spec.funding_period);
+    if (typeof spec.symbol === "string" && period != null && period > 0) {
+      hoursBySymbol.set(spec.symbol, period);
+    }
+  }
   const legs: Legs = {};
   for (const raw of rows) {
     const row = asRecord(raw);
@@ -434,7 +453,8 @@ export async function fetchOrderly(signal?: AbortSignal): Promise<Legs> {
       continue;
     }
     const symbol = venueSymbol(name);
-    const apr = intervalApr(rate!, 8);
+    const hours = hoursBySymbol.get(name) || 8;
+    const apr = intervalApr(rate!, hours);
     if (!symbol || apr == null) continue;
     put(legs, symbol, {
       exchange: "orderly",
@@ -443,7 +463,7 @@ export async function fetchOrderly(signal?: AbortSignal): Promise<Legs> {
       volume: volume!,
       price: price!,
       costPct: 2 * 0.03,
-      fundingHours: 8,
+      fundingHours: hours,
     });
   }
   return legs;
@@ -475,7 +495,9 @@ export async function fetchBackpack(signal?: AbortSignal): Promise<Legs> {
     const type = String(market.marketType ?? "").toUpperCase();
     if (type !== "PERP" && type !== "FUTURE") continue;
     let hours = toNumber(market.fundingInterval);
-    if (hours && hours > 24) hours = hours / 3600;
+    // Backpack publie fundingInterval en ms (3 600 000 = 1 h), pas en secondes.
+    if (hours != null && hours >= 60_000) hours = hours / 3_600_000;
+    else if (hours != null && hours > 24) hours = hours / 3600;
     hoursBySymbol.set(market.symbol, hours || 1);
   }
   const oiBySymbol = new Map<unknown, number | null>();
@@ -554,7 +576,7 @@ export async function fetchAster(signal?: AbortSignal): Promise<Legs> {
     put(legs, symbol, {
       exchange: "aster",
       apr,
-      oi: volume!,
+      oi: null, // Aster ne publie pas l’OI ; le champ utilisé était le volume 24 h.
       volume: volume!,
       price: price!,
       costPct: 2 * 0.04,
@@ -590,11 +612,11 @@ export async function fetchPacifica(signal?: AbortSignal): Promise<Legs> {
     const symbol = venueSymbol(name);
     const apr = intervalApr(rate!, 1);
     if (!symbol || apr == null) continue;
-    const oi = oiRaw! * price! > oiRaw! ? oiRaw! * price! : oiRaw!;
     put(legs, symbol, {
       exchange: "pacifica",
       apr,
-      oi,
+      // Doc Pacifica : open_interest déjà en USD.
+      oi: oiRaw!,
       volume: volume!,
       price: price!,
       costPct: 2 * 0.03,
@@ -660,12 +682,13 @@ export async function fetchHibachi(signal?: AbortSignal): Promise<Legs> {
         : venueSymbol(name)) ?? null;
     const apr = intervalApr(funding!, 1);
     if (!symbol || apr == null) return null;
+    // Doc Hibachi : paiement horaire de estimatedFundingRate (déjà le cashflow 1 h).
     return [
       symbol,
       {
         exchange: "hibachi",
         apr,
-        oi: volume!,
+        oi: null, // Hibachi ne publie pas l’OI ; le champ utilisé était le volume 24 h.
         volume: volume!,
         price: price!,
         costPct: 2 * taker * 100 + spreadPct,
@@ -727,7 +750,8 @@ export async function fetchGtrade(signal?: AbortSignal): Promise<Legs> {
           apr: (aprLong + aprShort) / 2,
           aprLong,
           aprShort,
-          oi: 1_000_000,
+          // Les deux taux s’annulent : (aprLong − aprShort) / 2 ≈ ×5 vs les autres DEX, pas ×1 ni ×−1.
+          oi: null, // gTrade ne publie pas d’OI ; 1 000 000 était une valeur factice.
           volume: null,
           price: 1,
           skipPrice: true,
@@ -752,12 +776,20 @@ export async function fetchGrvt(signal?: AbortSignal): Promise<Legs> {
     ).result,
   );
   if (!instruments.length) throw new FatalError("GRVT : format inattendu");
-  const slice = instruments
-    .filter((raw) => {
-      const name = asRecord(raw).instrument;
-      return typeof name === "string" && name.endsWith("_Perp");
-    })
-    .slice(0, 25);
+  const perps = instruments.filter((raw) => {
+    const name = asRecord(raw).instrument;
+    return typeof name === "string" && name.endsWith("_Perp");
+  });
+  // BTC / ETH d’abord pour le canari, même si le slice est limité à 25.
+  const preferred = ["BTC_USDT_Perp", "ETH_USDT_Perp"];
+  const head = preferred
+    .map((name) => perps.find((raw) => asRecord(raw).instrument === name))
+    .filter((raw): raw is NonNullable<typeof raw> => raw != null);
+  const rest = perps.filter((raw) => {
+    const name = asRecord(raw).instrument;
+    return name !== "BTC_USDT_Perp" && name !== "ETH_USDT_Perp";
+  });
+  const slice = [...head, ...rest].slice(0, 25);
 
   const results = await mapPool(slice, 6, async (raw) => {
     const item = asRecord(raw);
@@ -850,7 +882,7 @@ export async function fetchQfex(signal?: AbortSignal): Promise<Legs> {
       {
         exchange: "qfex",
         apr,
-        oi: 1_000_000,
+        oi: null, // QFEX ne publie pas d’OI ; 1 000 000 était une valeur factice.
         volume: null,
         price,
         costPct: 2 * 0.1,
@@ -918,6 +950,7 @@ export async function fetchPolymarket(signal?: AbortSignal): Promise<Legs> {
         exchange: "polymarket",
         apr,
         oi: cap,
+        oiIsCap: true,
         volume: null,
         price,
         costPct: 2 * 0.03,
@@ -1064,9 +1097,7 @@ export const VENUE_LOADERS: {
   { id: "pacifica", label: "Pacifica", load: fetchPacifica },
   { id: "hibachi", label: "Hibachi", load: fetchHibachi },
   { id: "carbon_tradfi", label: "Carbon TradFi", load: fetchCarbonTradfi },
-  { id: "gtrade", label: "gTrade", load: fetchGtrade },
   { id: "grvt", label: "GRVT", load: fetchGrvt },
-  { id: "qfex", label: "QFEX", load: fetchQfex },
   { id: "polymarket", label: "Polymarket", load: fetchPolymarket },
   { id: "arcus", label: "Arcus", load: fetchArcus },
   { id: "popdex", label: "PopDEX", load: fetchPopdex },

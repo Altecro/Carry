@@ -24,8 +24,12 @@ function breakevenHours(spreadApr: number, costPct: number): number {
 }
 
 function isLiquid(leg: Leg, filters: Filters): boolean {
-  // Carbon : `oi` est un plafond de taille, pas un OI. Liquide si le notionnel passe.
-  if (leg.oiIsCap) return filters.notional <= leg.oi;
+  // Carbon / Polymarket : `oi` est un plafond de taille, pas un OI.
+  if (leg.oiIsCap) return leg.oi != null && filters.notional <= leg.oi;
+  // OI inconnu : on ne s’appuie que sur un volume 24 h connu au-dessus du seuil.
+  if (leg.oi == null) {
+    return leg.volume != null && leg.volume >= filters.minVolume24h;
+  }
   if (leg.oi < filters.minOpenInterest) return false;
   if (leg.volume == null) return true;
   return leg.volume >= filters.minVolume24h;

@@ -36,8 +36,8 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
   const volMin = volumes.length ? Math.min(...volumes) : null;
   // Carbon : plafond, pas un OI — on l’écarte du « OI min ».
   const oiValues = [opp.long, opp.short]
-    .filter((leg) => !leg.oiIsCap)
-    .map((leg) => leg.oi);
+    .filter((leg) => !leg.oiIsCap && leg.oi != null)
+    .map((leg) => leg.oi!);
   const oiMin = oiValues.length ? Math.min(...oiValues) : null;
 
   async function copy() {
@@ -227,7 +227,7 @@ function LegRow({
   exchangeId: string;
   exchange: string;
   apr: number;
-  oi: number;
+  oi: number | null;
   oiIsCap?: boolean;
   fundingHours?: number;
 }) {
@@ -248,7 +248,9 @@ function LegRow({
             {exchange}
           </p>
           <p className="font-mono text-xs text-muted tabular-nums">
-            {oiIsCap ? "max" : t("oi")} {fmtUsd(oi, locale)}
+            {oi == null
+              ? `${t("oi")} n/d`
+              : `${oiIsCap ? "max" : t("oi")} ${fmtUsd(oi, locale)}`}
             {interval ? (
               <>
                 {" · "}

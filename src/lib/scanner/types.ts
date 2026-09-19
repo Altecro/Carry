@@ -3,7 +3,7 @@ export type Leg = {
   apr: number;
   aprLong?: number;
   aprShort?: number;
-  oi: number;
+  oi: number | null;
   volume: number | null;
   price: number;
   skipPrice?: boolean;
@@ -66,9 +66,7 @@ export const VENUES = [
   { id: "pacifica", label: "Pacifica" },
   { id: "hibachi", label: "Hibachi" },
   { id: "carbon_tradfi", label: "Carbon TradFi" },
-  { id: "gtrade", label: "gTrade" },
   { id: "grvt", label: "GRVT" },
-  { id: "qfex", label: "QFEX" },
   { id: "polymarket", label: "Polymarket" },
   { id: "arcus", label: "Arcus" },
   { id: "popdex", label: "PopDEX" },
