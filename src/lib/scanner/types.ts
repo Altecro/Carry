@@ -33,6 +33,8 @@ export type Filters = {
   maxPriceGapPct: number;
   maxBreakevenHours: number;
   notional: number;
+  /** Levier par jambe (1–10), pour le calculateur de capital. */
+  leverage: number;
   disabledVenues: string[];
   query: string;
 };
@@ -83,6 +85,7 @@ export const DEFAULT_FILTERS: Filters = {
   maxPriceGapPct: 1,
   maxBreakevenHours: 72,
   notional: 1000,
+  leverage: 2,
   disabledVenues: [],
   query: "",
 };

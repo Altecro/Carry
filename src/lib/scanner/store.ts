@@ -23,6 +23,7 @@ export const useFilters = create<FilterState>()(
         maxPriceGapPct: state.maxPriceGapPct,
         maxBreakevenHours: state.maxBreakevenHours,
         notional: state.notional,
+        leverage: state.leverage,
         disabledVenues: state.disabledVenues,
       }),
     },

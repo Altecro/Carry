@@ -29,6 +29,16 @@ const fr = {
   maxPriceGap: "Écart de prix max",
   maxBreakeven: "Remboursement max",
   notional: "Notionnel par jambe",
+  leverage: "Levier par jambe",
+  capitalDeposit: "Capital",
+  capitalPerDex: "{amount} / DEX",
+  capitalApr: "APR capital",
+  roundTripCost: "Coût A/R",
+  liqDistance: "Liq.",
+  liqEstimate:
+    "Distance à la liquidation estimée : chaque DEX a sa propre marge de maintenance.",
+  liqWarning:
+    "Un mouvement de {pct} contre une jambe peut la liquider avant que tu rééquilibres.",
   venues: "Places",
   reset: "Réinitialiser",
   statVenues: "Places",
@@ -91,6 +101,7 @@ const fr = {
     "Aucun token commun liquide sur ces places avec les seuils actuels (OI, volume, écart de prix).",
   researchOverlap: "Tokens communs",
   researchReset: "Variational + Hyperliquid",
+  researchExcluded: "exclu",
   backToScan: "Scanner",
 };
 
@@ -117,6 +128,16 @@ const en: Record<keyof typeof fr, string> = {
   maxPriceGap: "Max price gap",
   maxBreakeven: "Max breakeven",
   notional: "Notional per leg",
+  leverage: "Leverage per leg",
+  capitalDeposit: "Capital",
+  capitalPerDex: "{amount} / DEX",
+  capitalApr: "Capital APR",
+  roundTripCost: "Round-trip",
+  liqDistance: "Liq.",
+  liqEstimate:
+    "Liquidation distance is an estimate: each DEX has its own maintenance margin.",
+  liqWarning:
+    "A {pct} move against one leg can liquidate it before you rebalance.",
   venues: "Venues",
   reset: "Reset",
   statVenues: "Venues",
@@ -179,6 +200,7 @@ const en: Record<keyof typeof fr, string> = {
     "No liquid overlapping tokens on these venues with the current thresholds (OI, volume, price gap).",
   researchOverlap: "Shared tokens",
   researchReset: "Variational + Hyperliquid",
+  researchExcluded: "excluded",
   backToScan: "Scanner",
 };
 

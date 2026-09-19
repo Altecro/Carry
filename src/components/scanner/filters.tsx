@@ -175,6 +175,19 @@ export function FilterPanel({ filters, onChange, onReset, venueErrors }: Props) 
         />
       </Field>
 
+      <Field
+        label={t("leverage")}
+        value={`${filters.leverage ?? 2}×`}
+      >
+        <Slider
+          min={1}
+          max={10}
+          step={1}
+          value={[filters.leverage ?? 2]}
+          onValueChange={([v]) => onChange({ leverage: v ?? 2 })}
+        />
+      </Field>
+
       <div>
         <p className="mb-2 text-xs font-medium tracking-wide text-muted uppercase">
           {t("venues")}

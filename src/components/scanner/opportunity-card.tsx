@@ -19,17 +19,29 @@ type Props = {
   rank: number;
   opp: Opportunity;
   notional: number;
+  /** Levier par jambe, 1–10. */
+  leverage: number;
 };
 
 function venueName(id: string) {
   return VENUE_LABEL[id] ?? id;
 }
 
-export function OpportunityCard({ rank, opp, notional }: Props) {
+export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
   const { locale, t } = useT();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const daily = dailyGain(opp.spread, notional);
+  // Capital total = 2 × notionnel / levier (moitié sur chaque DEX).
+  const lev = Math.min(10, Math.max(1, leverage || 2));
+  const capital = (2 * notional) / lev;
+  const capitalEach = capital / 2;
+  const capitalApr = (opp.spread * lev) / 2;
+  const capitalDaily = dailyGain(capitalApr, capital);
+  // Coût A/R en $ : somme des % des deux jambes × taille d’une jambe.
+  const costUsd = (opp.cost / 100) * notional;
+  // Distance approx. à la liq. = 100 / levier − 1 % (buffer).
+  const liqPct = 100 / lev - 1;
   const volumes = [opp.long.volume, opp.short.volume].filter(
     (v): v is number => v != null,
   );
@@ -171,6 +183,50 @@ export function OpportunityCard({ rank, opp, notional }: Props) {
           <dd className="inline">{fmtHours(opp.hours, locale)}</dd>
         </div>
       </dl>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs text-muted tabular-nums sm:grid-cols-4">
+        <div>
+          <dt className="text-subtle">{t("capitalDeposit")}</dt>
+          <dd className="text-fg">
+            {fmtUsd(capital, locale)}
+            <span className="mt-0.5 block text-subtle">
+              {t("capitalPerDex", { amount: fmtUsd(capitalEach, locale) })}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-subtle">{t("capitalApr")}</dt>
+          <dd className="text-gain">
+            {fmtApr(capitalApr, locale)}
+            <span className="mt-0.5 block text-muted">
+              ~{fmtUsd(capitalDaily, locale)} {t("perDay")}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-subtle">{t("roundTripCost")}</dt>
+          <dd className="text-fg">
+            {Math.abs(costUsd) >= 1000
+              ? fmtUsd(costUsd, locale)
+              : `${costUsd.toLocaleString(numberLocale(locale), {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })} $`}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-subtle">{t("liqDistance")}</dt>
+          <dd className="text-fg">~{fmtPct(liqPct, locale, 0)}</dd>
+        </div>
+      </dl>
+      <p className="mt-2 text-pretty text-xs leading-relaxed text-subtle">
+        {t("liqEstimate")}
+      </p>
+      {lev > 5 ? (
+        <p className="mt-1 text-pretty text-xs leading-relaxed text-loss">
+          {t("liqWarning", { pct: fmtPct(liqPct, locale, 0) })}
+        </p>
+      ) : null}
 
       {open ? (
         <div className="mt-4 grid gap-3 rounded-lg bg-surface-2 p-3 text-sm sm:grid-cols-2">

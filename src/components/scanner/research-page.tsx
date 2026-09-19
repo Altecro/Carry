@@ -37,6 +37,22 @@ export function ResearchPage() {
   });
 
   const selected = research.venues;
+  const venueStatus = useMemo(() => {
+    const map = new Map<string, { error?: string; label: string }>();
+    for (const venue of scan.data?.venues ?? []) {
+      map.set(venue.id, { error: venue.error, label: venue.label });
+    }
+    return map;
+  }, [scan.data]);
+
+  const excludedSelected = VENUES.filter((venue) => {
+    if (!selected.includes(venue.id)) return false;
+    return Boolean(venueStatus.get(venue.id)?.error);
+  });
+  const usableCount = selected.filter(
+    (id) => !venueStatus.get(id)?.error,
+  ).length;
+
   const opportunities = useMemo(() => {
     if (!scan.data || selected.length < 2) return [];
     return findResearchPairs(scan.data.legs, { ...filters, query }, selected);
@@ -95,6 +111,7 @@ export function ResearchPage() {
           <div className="flex flex-wrap gap-2">
             {VENUES.map((venue) => {
               const on = selected.includes(venue.id);
+              const excluded = Boolean(venueStatus.get(venue.id)?.error);
               return (
                 <button
                   key={venue.id}
@@ -103,20 +120,35 @@ export function ResearchPage() {
                   onClick={() => research.toggle(venue.id)}
                   className={cn(
                     "h-11 rounded-full px-3.5 text-sm shadow-border",
-                    on
-                      ? "bg-accent text-accent-fg"
-                      : "bg-surface text-muted hover:text-fg",
+                    excluded
+                      ? "bg-surface text-subtle"
+                      : on
+                        ? "bg-accent text-accent-fg"
+                        : "bg-surface text-muted hover:text-fg",
                   )}
                 >
                   {venue.label}
+                  {excluded ? ` · ${t("researchExcluded")}` : null}
                 </button>
               );
             })}
           </div>
+          {excludedSelected.length > 0 ? (
+            <ul className="mt-3 flex flex-col gap-2">
+              {excludedSelected.map((venue) => (
+                <li
+                  key={venue.id}
+                  className="text-pretty text-sm leading-relaxed text-muted"
+                >
+                  {venue.label} : {venueStatus.get(venue.id)?.error}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Stat label={t("venues")} value={`${selected.length}`} />
+          <Stat label={t("venues")} value={`${usableCount}`} />
           <Stat
             label={t("researchOverlap")}
             value={scan.data && selected.length >= 2 ? String(overlap) : "—"}
@@ -176,6 +208,7 @@ export function ResearchPage() {
                       rank={index + 1}
                       opp={opp}
                       notional={filters.notional}
+                      leverage={filters.leverage ?? 2}
                     />
                   </li>
                 ))}

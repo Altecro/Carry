@@ -222,6 +222,7 @@ export function Desk() {
                             rank={index + 1}
                             opp={opp}
                             notional={filters.notional}
+                            leverage={filters.leverage ?? 2}
                           />
                         </li>
                       ))}
