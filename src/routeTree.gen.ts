@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as ResearchRouteImport } from './routes/research'
+import { Route as ApiSnapshotRouteImport } from './routes/api/snapshot'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const ResearchRoute = ResearchRouteImport.update({
   path: '/research',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSnapshotRoute = ApiSnapshotRouteImport.update({
+  id: '/api/snapshot',
+  path: '/api/snapshot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/research': typeof ResearchRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/research': typeof ResearchRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/research': typeof ResearchRoute
+  '/api/snapshot': typeof ApiSnapshotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/docs' | '/research'
+  fullPaths: '/' | '/docs' | '/research' | '/api/snapshot'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/docs' | '/research'
-  id: '__root__' | '/' | '/docs' | '/research'
+  to: '/' | '/docs' | '/research' | '/api/snapshot'
+  id: '__root__' | '/' | '/docs' | '/research' | '/api/snapshot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DocsRoute: typeof DocsRoute
   ResearchRoute: typeof ResearchRoute
+  ApiSnapshotRoute: typeof ApiSnapshotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/snapshot': {
+      id: '/api/snapshot'
+      path: '/api/snapshot'
+      fullPath: '/api/snapshot'
+      preLoaderRoute: typeof ApiSnapshotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DocsRoute: DocsRoute,
   ResearchRoute: ResearchRoute,
+  ApiSnapshotRoute: ApiSnapshotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

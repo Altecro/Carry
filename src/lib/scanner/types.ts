@@ -26,6 +26,23 @@ export type Opportunity = {
   hours: number;
 };
 
+export type PairRef = {
+  symbol: string;
+  long: string;
+  short: string;
+};
+
+export type PairHistory = {
+  symbol: string;
+  long: string;
+  short: string;
+  avg24h: number | null;
+  avg7d: number | null;
+  hold24h: number | null;
+  hoursCovered: number | null;
+  series: { t: number; spread: number }[];
+};
+
 export type Filters = {
   minSpreadApr: number;
   minOpenInterest: number;

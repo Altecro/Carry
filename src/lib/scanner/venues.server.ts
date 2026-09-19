@@ -17,6 +17,10 @@ import {
   mapPool,
   unwrapCarbon,
 } from "./http.server";
+import {
+  hydrateCarbonIntervals,
+  persistCarbonIntervals,
+} from "./history.server";
 
 const VARIATIONAL_URL =
   "https://omni-client-api.prod.ap-northeast-1.variational.io/metadata/stats";
@@ -31,6 +35,8 @@ const carbonIntervalSeen = new Map<
   string,
   Partial<Record<1 | 4 | 8, number>>
 >();
+/** Paliers vus pendant le scan en cours, à écrire en base. */
+let carbonScanObserved: { market: string; hours: 1 | 4 | 8 }[] = [];
 
 /** Lit l’heure UTC du prochain paiement : 00/08/16 → 8 h, autre multiple de 4 → 4 h, sinon 1 h. */
 function carbonHourBucket(nextMs: number): 1 | 4 | 8 {
@@ -42,16 +48,15 @@ function carbonHourBucket(nextMs: number): 1 | 4 | 8 {
 
 /**
  * Intervalle Carbon pour un marché (ex. ONEUSDT).
- * Un horaire paie aussi à 00/04/08/12/16/20 UTC : sans mémoire, il passerait
- * en 4 h ou 8 h dans l’heure qui précède. On retient le plus petit palier
- * vu dans les 24 dernières heures (observation actuelle comprise), plafonné
- * par la table de référence (générée en plage fiable) si le marché y figure.
+ * Plus petit palier entre : observation actuelle, mémoire process/base 24 h,
+ * et table de référence (carbon-intervals.json) si le marché y figure.
  */
 function carbonFundingHours(market: string, nextMs: number | null): number {
   let deduced = CARBON_DEFAULT_FUNDING_HOURS;
   if (nextMs != null && nextMs >= 1e12) {
     const now = Date.now();
     const observed = carbonHourBucket(nextMs);
+    carbonScanObserved.push({ market, hours: observed });
     const memory = { ...(carbonIntervalSeen.get(market) ?? {}) };
     memory[observed] = now;
     for (const hours of [1, 4, 8] as const) {
@@ -199,6 +204,35 @@ export async function fetchCarbon(
   signal?: AbortSignal,
   solver = "PERPS_HUB",
   exchangeName = "carbon",
+  fundingHoursOverride?: number,
+): Promise<Legs> {
+  const persistDb = fundingHoursOverride == null;
+  if (persistDb) {
+    carbonScanObserved = [];
+    await hydrateCarbonIntervals(carbonIntervalSeen);
+  }
+  try {
+    return await fetchCarbonMarkets(
+      signal,
+      solver,
+      exchangeName,
+      fundingHoursOverride,
+    );
+  } finally {
+    if (persistDb) {
+      try {
+        await persistCarbonIntervals(carbonScanObserved);
+      } catch {
+        // Base indisponible : on garde la mémoire process.
+      }
+    }
+  }
+}
+
+async function fetchCarbonMarkets(
+  signal: AbortSignal | undefined,
+  solver: string,
+  exchangeName: string,
   fundingHoursOverride?: number,
 ): Promise<Legs> {
   const marketsPayload = await getJson(

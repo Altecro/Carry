@@ -1,0 +1,15 @@
+name: snapshot
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enregistrer un créneau de funding
+        run: curl -fsS --max-time 90 "${CARRY_URL}/api/snapshot"
+        env:
+          CARRY_URL: ${{ vars.CARRY_URL }}

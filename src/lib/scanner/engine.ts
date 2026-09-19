@@ -1,6 +1,6 @@
 import type { Filters, Leg, Opportunity } from "./types";
 
-function sideApr(leg: Leg, side: "long" | "short"): number {
+export function sideApr(leg: Leg, side: "long" | "short"): number {
   if (side === "long") {
     const value = leg.aprLong ?? leg.apr;
     // Carbon quotes the long's PnL; other venues quote longs-pay-positive.

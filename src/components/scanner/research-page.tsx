@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { runScan } from "@/lib/scanner/scan.functions";
 import { findResearchPairs } from "@/lib/scanner/engine";
 import { useFilters, useResearch } from "@/lib/scanner/store";
+import { pairHistoryKey, useSpreadHistory } from "@/lib/scanner/use-spread-history";
 import { VENUES } from "@/lib/scanner/types";
 import { fmtUsd } from "@/lib/scanner/format";
 import { useT } from "@/lib/i18n/store";
@@ -23,6 +24,7 @@ export function ResearchPage() {
   const research = useResearch();
   const [visible, setVisible] = useState(12);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<"spread" | "avg24h">("spread");
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -57,6 +59,23 @@ export function ResearchPage() {
     if (!scan.data || selected.length < 2) return [];
     return findResearchPairs(scan.data.legs, { ...filters, query }, selected);
   }, [scan.data, filters, query, selected]);
+
+  const { byKey: historyByKey } = useSpreadHistory(
+    opportunities,
+    filters.minSpreadApr,
+  );
+  const ranked = useMemo(() => {
+    if (sort !== "avg24h") return opportunities;
+    return [...opportunities].sort((a, b) => {
+      const ha = historyByKey.get(
+        pairHistoryKey(a.symbol, a.long.exchange, a.short.exchange),
+      )?.avg24h;
+      const hb = historyByKey.get(
+        pairHistoryKey(b.symbol, b.long.exchange, b.short.exchange),
+      )?.avg24h;
+      return (hb ?? Number.NEGATIVE_INFINITY) - (ha ?? Number.NEGATIVE_INFINITY);
+    });
+  }, [opportunities, sort, historyByKey]);
 
   const overlap =
     scan.data == null || selected.length < 2
@@ -159,12 +178,40 @@ export function ResearchPage() {
           />
         </section>
 
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("filterTicker")}
-          className="sm:max-w-xs"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("filterTicker")}
+            className="sm:max-w-xs"
+          />
+          <div className="flex h-11 rounded-lg bg-surface-2 p-1">
+            <button
+              type="button"
+              onClick={() => setSort("spread")}
+              className={cn(
+                "h-9 rounded-md px-3 text-xs font-medium",
+                sort === "spread"
+                  ? "bg-accent text-accent-fg"
+                  : "text-muted hover:text-fg",
+              )}
+            >
+              {t("sortCurrent")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSort("avg24h")}
+              className={cn(
+                "h-9 rounded-md px-3 text-xs font-medium",
+                sort === "avg24h"
+                  ? "bg-accent text-accent-fg"
+                  : "text-muted hover:text-fg",
+              )}
+            >
+              {t("sortAvg24h")}
+            </button>
+          </div>
+        </div>
 
         <p className="text-pretty text-xs text-muted">
           {t("disclaimer", { notional: fmtUsd(filters.notional, locale) })}
@@ -191,7 +238,7 @@ export function ResearchPage() {
         ) : null}
 
         {scan.data && selected.length >= 2 ? (
-          opportunities.length === 0 ? (
+          ranked.length === 0 ? (
             <div className="rounded-xl bg-surface px-5 py-10 text-center shadow-border">
               <p className="font-display text-lg text-fg">{t("emptyTitle")}</p>
               <p className="mx-auto mt-2 max-w-md text-pretty text-sm text-muted">
@@ -200,26 +247,33 @@ export function ResearchPage() {
             </div>
           ) : (
             <>
-              <SpreadChart items={opportunities} />
+              <SpreadChart items={ranked} />
               <ol className="flex flex-col gap-3">
-                {opportunities.slice(0, visible).map((opp, index) => (
+                {ranked.slice(0, visible).map((opp, index) => (
                   <li key={`${opp.symbol}-${opp.long.exchange}-${opp.short.exchange}`}>
                     <OpportunityCard
                       rank={index + 1}
                       opp={opp}
                       notional={filters.notional}
                       leverage={filters.leverage ?? 2}
+                      history={historyByKey.get(
+                        pairHistoryKey(
+                          opp.symbol,
+                          opp.long.exchange,
+                          opp.short.exchange,
+                        ),
+                      )}
                     />
                   </li>
                 ))}
               </ol>
-              {opportunities.length > visible ? (
+              {ranked.length > visible ? (
                 <Button
                   variant="outline"
                   className="self-center"
                   onClick={() => setVisible((n) => n + 20)}
                 >
-                  {t("showMore", { count: opportunities.length - visible })}
+                  {t("showMore", { count: ranked.length - visible })}
                 </Button>
               ) : null}
             </>

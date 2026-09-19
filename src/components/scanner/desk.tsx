@@ -5,6 +5,7 @@ import { RefreshCw, SlidersHorizontal } from "lucide-react";
 import { runScan } from "@/lib/scanner/scan.functions";
 import { findOpportunities } from "@/lib/scanner/engine";
 import { useFilters } from "@/lib/scanner/store";
+import { pairHistoryKey, useSpreadHistory } from "@/lib/scanner/use-spread-history";
 import { FILTER_PRESETS } from "@/lib/scanner/types";
 import { venueUrl } from "@/lib/scanner/links";
 import { fmtTime, fmtUsd } from "@/lib/scanner/format";
@@ -53,6 +54,7 @@ export function Desk() {
 
   const loading = scan.isPending || refresh.isPending;
   const [visible, setVisible] = useState(12);
+  const [sort, setSort] = useState<"spread" | "avg24h">("spread");
 
   const onRefresh = () => {
     setElapsed(0);
@@ -67,6 +69,23 @@ export function Desk() {
     if (!scan.data) return [];
     return findOpportunities(scan.data.legs, filters);
   }, [scan.data, filters]);
+
+  const { byKey: historyByKey } = useSpreadHistory(
+    opportunities,
+    filters.minSpreadApr,
+  );
+  const ranked = useMemo(() => {
+    if (sort !== "avg24h") return opportunities;
+    return [...opportunities].sort((a, b) => {
+      const ha = historyByKey.get(
+        pairHistoryKey(a.symbol, a.long.exchange, a.short.exchange),
+      )?.avg24h;
+      const hb = historyByKey.get(
+        pairHistoryKey(b.symbol, b.long.exchange, b.short.exchange),
+      )?.avg24h;
+      return (hb ?? Number.NEGATIVE_INFINITY) - (ha ?? Number.NEGATIVE_INFINITY);
+    });
+  }, [opportunities, sort, historyByKey]);
 
   const venueErrors = useMemo(() => {
     const map: Record<string, string> = {};
@@ -182,6 +201,32 @@ export function Desk() {
                 placeholder={t("filterTicker")}
                 className="sm:max-w-xs"
               />
+              <div className="flex h-11 rounded-lg bg-surface-2 p-1">
+                <button
+                  type="button"
+                  onClick={() => setSort("spread")}
+                  className={cn(
+                    "h-9 rounded-md px-3 text-xs font-medium",
+                    sort === "spread"
+                      ? "bg-accent text-accent-fg"
+                      : "text-muted hover:text-fg",
+                  )}
+                >
+                  {t("sortCurrent")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSort("avg24h")}
+                  className={cn(
+                    "h-9 rounded-md px-3 text-xs font-medium",
+                    sort === "avg24h"
+                      ? "bg-accent text-accent-fg"
+                      : "text-muted hover:text-fg",
+                  )}
+                >
+                  {t("sortAvg24h")}
+                </button>
+              </div>
               <p className="text-pretty text-xs text-muted">
                 {t("disclaimer", { notional: fmtUsd(filters.notional, locale) })}{" "}
                 <Link
@@ -210,30 +255,37 @@ export function Desk() {
 
             {scan.data && !loading ? (
               <>
-                <SpreadChart items={opportunities} />
-                {opportunities.length === 0 ? (
+                <SpreadChart items={ranked} />
+                {ranked.length === 0 ? (
                   <EmptyState hasMulti={multi > 0} />
                 ) : (
                   <>
                     <ol className="flex flex-col gap-3">
-                      {opportunities.slice(0, visible).map((opp, index) => (
+                      {ranked.slice(0, visible).map((opp, index) => (
                         <li key={`${opp.symbol}-${opp.long.exchange}-${opp.short.exchange}`}>
                           <OpportunityCard
                             rank={index + 1}
                             opp={opp}
                             notional={filters.notional}
                             leverage={filters.leverage ?? 2}
+                            history={historyByKey.get(
+                              pairHistoryKey(
+                                opp.symbol,
+                                opp.long.exchange,
+                                opp.short.exchange,
+                              ),
+                            )}
                           />
                         </li>
                       ))}
                     </ol>
-                    {opportunities.length > visible ? (
+                    {ranked.length > visible ? (
                       <Button
                         variant="outline"
                         className="self-center"
                         onClick={() => setVisible((n) => n + 20)}
                       >
-                        {t("showMore", { count: opportunities.length - visible })}
+                        {t("showMore", { count: ranked.length - visible })}
                       </Button>
                     ) : null}
                   </>

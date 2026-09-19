@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Check, Copy } from "lucide-react";
-import type { Opportunity } from "@/lib/scanner/types";
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import type { Opportunity, PairHistory } from "@/lib/scanner/types";
 import { VENUE_LABEL } from "@/lib/scanner/types";
 import { venueUrl, venueAccessCode } from "@/lib/scanner/links";
 import { dailyGain } from "@/lib/scanner/engine";
@@ -21,13 +29,20 @@ type Props = {
   notional: number;
   /** Levier par jambe, 1–10. */
   leverage: number;
+  history?: PairHistory | null;
 };
 
 function venueName(id: string) {
   return VENUE_LABEL[id] ?? id;
 }
 
-export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
+export function OpportunityCard({
+  rank,
+  opp,
+  notional,
+  leverage,
+  history,
+}: Props) {
   const { locale, t } = useT();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -42,6 +57,23 @@ export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
   const costUsd = (opp.cost / 100) * notional;
   // Distance approx. à la liq. = 100 / levier − 1 % (buffer).
   const liqPct = 100 / lev - 1;
+  const avg = history?.avg24h ?? null;
+  const hold = history?.hold24h ?? null;
+  const covered = history?.hoursCovered ?? null;
+  const hasHistory = avg != null && hold != null;
+  const spike = avg != null && avg > 0 && opp.spread > 2 * avg;
+  const historyLine = !hasHistory
+    ? t("histPending")
+    : covered != null && covered < 24
+      ? t("histAvgSince", {
+          hours: Math.max(1, Math.round(covered)),
+          avg: fmtApr(avg, locale),
+          hold: fmtPct(hold * 100, locale, 0),
+        })
+      : t("histAvg24h", {
+          avg: fmtApr(avg, locale),
+          hold: fmtPct(hold * 100, locale, 0),
+        });
   const volumes = [opp.long.volume, opp.short.volume].filter(
     (v): v is number => v != null,
   );
@@ -98,6 +130,11 @@ export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
           <span className="truncate font-display text-xl font-medium tracking-tight text-fg sm:text-2xl">
             {opp.symbol}
           </span>
+          {spike ? (
+            <span className="shrink-0 rounded-full bg-loss/20 px-2 py-0.5 text-xs font-medium tracking-wide text-loss uppercase">
+              {t("histSpike")}
+            </span>
+          ) : null}
         </button>
         <div className="flex items-center gap-2">
           <div className="text-right">
@@ -137,6 +174,10 @@ export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
           </button>
         </div>
       </header>
+
+      <p className="mt-2 text-pretty font-mono text-xs text-muted tabular-nums">
+        {historyLine}
+      </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <LegRow
@@ -264,9 +305,83 @@ export function OpportunityCard({ rank, opp, notional, leverage }: Props) {
               daily: fmtUsd(daily, locale),
             })}
           </p>
+          {history?.series && history.series.length >= 2 ? (
+            <HistoryChart series={history.series} />
+          ) : null}
         </div>
       ) : null}
     </article>
+  );
+}
+
+function HistoryChart({ series }: { series: { t: number; spread: number }[] }) {
+  const { locale, t } = useT();
+  const data = series.map((point) => ({
+    t: point.t,
+    spread: Number(point.spread.toFixed(1)),
+  }));
+  return (
+    <div className="sm:col-span-2">
+      <p className="mb-2 text-xs font-medium tracking-wide text-subtle uppercase">
+        {t("histChart")}
+      </p>
+      <div className="h-28">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={(value: number) =>
+                new Date(value).toLocaleDateString(numberLocale(locale), {
+                  month: "short",
+                  day: "numeric",
+                })
+              }
+              tick={{ fill: "var(--color-muted)", fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "var(--color-muted)", fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={36}
+              unit="%"
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--color-surface-2)",
+                border:
+                  "1px solid color-mix(in oklab, var(--color-fg) 12%, transparent)",
+                borderRadius: 8,
+                color: "var(--color-fg)",
+                fontSize: 12,
+              }}
+              labelFormatter={(value) =>
+                new Date(Number(value)).toLocaleString(numberLocale(locale), {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              }
+              formatter={(value: number | string) => [
+                `${value} %`,
+                t("spread"),
+              ]}
+            />
+            <Line
+              type="monotone"
+              dataKey="spread"
+              stroke="var(--color-gain)"
+              strokeWidth={1.5}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
 
